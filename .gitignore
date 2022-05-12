@@ -1,3 +1,5 @@
 .env
 .github/workflows/cosign.*
 temp/
+
+.idea
