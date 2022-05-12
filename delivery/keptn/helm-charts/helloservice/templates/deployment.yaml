@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         app: helloservice
+        app.kubernetes.io/version: {{ .Chart.Version }}
     spec:
       terminationGracePeriodSeconds: 5
       containers:
@@ -25,6 +26,12 @@ spec:
               value: "9000"
             - name: DT_CUSTOM_PROP
               value: "version={{ .Chart.Version }} revision={{ .Release.Revision }} releasename={{ .Release.Name }} keptn_project={{ .Values.keptn.project }} keptn_service={{ .Values.keptn.service }} keptn_stage={{ .Values.keptn.stage }} keptn_deployment={{ .Values.keptn.deployment }}"
+            {{ if .Values.useDynatraceVersion }}
+            - name: DT_RELEASE_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/version']
+            {{ end }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
