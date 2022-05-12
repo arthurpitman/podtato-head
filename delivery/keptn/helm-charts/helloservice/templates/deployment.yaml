@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: helloservice
-  namespace: {{ .Release.Namespace }} 
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -15,11 +15,31 @@ spec:
     spec:
       terminationGracePeriodSeconds: 5
       containers:
-      - name: server
-        image: {{ .Values.image}}
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 9000
-        env:
-        - name: PORT
-          value: "9000"
+        - name: server
+          image: {{ .Values.image}}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9000
+          env:
+            - name: PORT
+              value: "9000"
+            - name: DT_CUSTOM_PROP
+              value: "version={{ .Chart.Version }} revision={{ .Release.Revision }} releasename={{ .Release.Name }} keptn_project={{ .Values.keptn.project }} keptn_service={{ .Values.keptn.service }} keptn_stage={{ .Values.keptn.stage }} keptn_deployment={{ .Values.keptn.deployment }}"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.name"
+            - name: DEPLOYMENT_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.labels['deployment']"
+            - name: CONTAINER_IMAGE
+              value: "{{ .Values.image }}"
+            - name: KEPTN_PROJECT
+              value: "pod-tato-head"
+            - name: KEPTN_STAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.namespace"
+            - name: KEPTN_SERVICE
+              value: "helloservice"
