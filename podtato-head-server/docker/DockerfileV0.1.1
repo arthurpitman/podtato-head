@@ -23,7 +23,7 @@ COPY . .
 RUN go build -ldflags '-linkmode=external' -o podtatoserver ./main.go
 
 # Build a small image
-FROM scratch
+FROM gcr.io/distroless/base
 
 COPY --from=builder /build/podtatoserver /
 COPY /static  /static
