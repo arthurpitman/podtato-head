@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -81,21 +83,58 @@ func (h HTTPHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		getCallCounter.WithLabelValues(status).Inc()
 	}()
 
+	if shouldReturnError(podtatoConfiguration.ServiceVersion) {
+		returnError(res)
+		return
+	}
+
 	overviewTemplate = template.Must(template.ParseFiles(fmt.Sprintf("%s/podtato-new.html", staticAssetsPath)))
 	err := overviewTemplate.Execute(res, podtatoConfiguration)
 
 	if err != nil {
 		log.Print(err.Error())
 	}
-	// Slow build
-	if podtatoConfiguration.ServiceVersion == "0.1.2" {
-		time.Sleep(400 * time.Millisecond)
-	}
+
+	time.Sleep(time.Duration(getBaseSleepMilliseconds(podtatoConfiguration.ServiceVersion)+rand.Intn(20)) * time.Millisecond)
 
 	if err != nil {
 		status = "error"
 	}
 	status = "success"
+}
+
+func returnError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Header().Set("Content-Type", "application/json")
+	resp := make(map[string]string)
+	resp["message"] = "Some Error Occurred"
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+	}
+	_, _ = w.Write(jsonResp)
+}
+
+func shouldReturnError(version string) bool {
+	switch version {
+	case "0.1.2":
+		return rand.Intn(80) == 0
+	case "0.1.1":
+		return rand.Intn(10000) == 0
+	default:
+		return rand.Intn(4000) == 0
+	}
+}
+
+func getBaseSleepMilliseconds(version string) int {
+	switch version {
+	case "0.1.2":
+		return 390
+	case "0.1.1":
+		return 10
+	default:
+		return 90
+	}
 }
 
 func prometheusMiddleware(next http.Handler) http.Handler {
